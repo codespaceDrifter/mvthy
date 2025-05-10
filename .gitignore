@@ -1,0 +1,7 @@
+venv
+checkpoints/
+curriculum/
+*.pyc
+*.bin
+*.txt
+*.pt
