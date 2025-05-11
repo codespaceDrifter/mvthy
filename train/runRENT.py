@@ -7,37 +7,33 @@ sys.path.append(project_root)
 from model.transformer.classic_transformer import ClassicTransformer
 import torch.nn as nn
 import torch
-
-
-from utils.qna_text_dataset import TransformerDataset
-
-dataset_root = os.path.join (project_root, "curriculum/bin/int_addition")
-
-train_dataset = TransformerDataset(
-    path=os.path.join(dataset_root, "train.bin"),
-    input_len=32,
-    output_len=16,
-)
-
-test_dataset = TransformerDataset(
-    path=os.path.join(dataset_root, "test.bin"),
-    input_len=32,
-    output_len=16,
-)
-
-print(f"Train dataset length: {len(train_dataset)}")
-print(f"Test dataset length: {len(test_dataset)}")
-
+from utils.bin_to_tensors import bin_to_tensors
 from tokenization.tokenizer import Tokenizer
+from train.trainer import train_model
+from utils.tensor_dataset import TensorDataset
 
+dataset_root = os.path.join (project_root, "curriculum/int_addition")
+
+src_train, tgt_train, src_test, tgt_test = bin_to_tensors(
+    src_path = os.path.join(dataset_root, "bin", "src.bin"),
+    tgt_path = os.path.join(dataset_root, "bin", "tgt.bin"), 
+    input_len = 32,
+    output_len = 16,
+    train_test_ratio= 0.8,
+    dtype = torch.int32)
+
+print ("src train shape", src_train.shape)
+print ("tgt train shape", tgt_train.shape)
+print ("src test shape", src_test.shape)
+print ("tgt test shape", tgt_test.shape)
 
 tokenizer = Tokenizer(os.path.join(project_root, "tokenization/assets/token_to_id.json"))
 
 vocab_size = len (tokenizer.id_to_token)
 print ("vocab size ", vocab_size)
 
-print(f"Train dataset sample decoded input: ", tokenizer.decode(train_dataset[0][0]))
-print(f"Train dataset sample decoded target: ", tokenizer.decode(train_dataset[0][1]))
+print(f"Train dataset sample decoded input: ", tokenizer.decode(src_train[0]))
+print(f"Train dataset sample decoded target: ", tokenizer.decode(tgt_train[0]))
 
 model = ClassicTransformer(
     vocab_size = vocab_size,
@@ -63,21 +59,21 @@ parameter_num = sum(p.numel() for p in model.parameters() )
 print(f"parameters num: {parameter_num:,}")
 
 
-
-from train.trainer import train_model
+train_dataset = TensorDataset(src_train, tgt_train)
+test_dataset = TensorDataset(src_test, tgt_test)
 
 train_model(
-    train_dataset=train_dataset,
-    test_dataset=test_dataset,
-    model=model,
+    train_dataset = train_dataset,
+    test_dataset = test_dataset,
+    model = model,
     optimizer=torch.optim.Adam(model.parameters(), lr=0.0001),
-    batch_size=2048,
+    batch_size = 3072,
     save_folder_path=os.path.join(project_root, "checkpoints"),
     perma_save_folder_path=os.path.join(project_root, "checkpoints/perma"),
     loss_fn=nn.CrossEntropyLoss(ignore_index=0),
     tokenizer=tokenizer,
-    batch_per_save=1000,
+    batch_per_save=100,
     clip_grad_norm = 1,
     num_workers = 4,
-    debug = True
+    debug = False
 )
