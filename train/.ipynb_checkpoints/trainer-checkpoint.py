@@ -26,18 +26,16 @@ these 3 lines basically. the forward_pass function
 '''
 
 def train_model(
-    train_dataset,
-    test_dataset,
+    train_loader,
+    test_loader,
     model,
     optimizer,
-    batch_size,
     save_folder_path,
     perma_save_folder_path,
     loss_fn,
     tokenizer = None,
     batch_per_save = 10,
     clip_grad_norm = 2.0,
-    num_workers = 2,
     debug = False
 ):
     # to debug
@@ -49,10 +47,6 @@ def train_model(
     scaler = GradScaler()
 
     model.cuda()
-    # Create data loaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers = num_workers)
-    test_loader = DataLoader(test_dataset, batch_size=1, shuffle=True)
-    
     
     # Ensure save directory exists
     os.makedirs(os.path.dirname(save_folder_path), exist_ok=True)
@@ -144,7 +138,11 @@ def train_model(
                         permuted_outputs = test_outputs.permute(0, 2, 1)
                         test_loss = loss_fn(permuted_outputs, test_targets[:, 1:].long()).item()
                         print(f"Test Loss: {test_loss:.4f}")
-    
+                        
+                        print("Input:")
+                        input_text = tokenizer.decode(test_inputs[0].cpu())
+                        print(input_text)
+                        
                         print("Target:")
                         target_text = tokenizer.decode(test_targets[0].cpu())
                         print(target_text)

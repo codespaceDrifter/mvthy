@@ -12,13 +12,16 @@ from tokenization.tokenizer import Tokenizer
 
 
 def txt_to_bin(tokenizer: Tokenizer,
-                    src_txt_path: str,
-                    tgt_txt_path: str,
-                    src_bin_path: str,
-                    tgt_bin_path: str,
-                    input_len: int,
-                    output_len: int,
-                    dtype: torch.dtype = torch.int32):
+                train_ratio: float,
+                src_txt_path: str,
+                tgt_txt_path: str,
+                src_train_bin_path: str,
+                tgt_train_bin_path: str,
+                src_test_bin_path: str,
+                tgt_test_bin_path: str,
+                input_len: int,
+                output_len: int,
+                dtype: torch.dtype = torch.int32):
     
     # First pass: just count lines
     print("Counting lines...")
@@ -27,13 +30,18 @@ def txt_to_bin(tokenizer: Tokenizer,
         for line in src_txt:
             if line.strip():
                 total_lines += 1
+
+    train_lines = int(total_lines * train_ratio)
                 
     # Second pass: process one line at a time
     processed_lines = 0
     with open(src_txt_path, "r", encoding="utf-8", newline='\n') as src_txt, \
          open(tgt_txt_path, "r", encoding="utf-8", newline='\n') as tgt_txt, \
-         open(src_bin_path, "wb") as src_bin, \
-         open(tgt_bin_path, "wb") as tgt_bin:
+         open(src_train_bin_path, "wb") as src_train_bin, \
+         open(tgt_train_bin_path, "wb") as tgt_train_bin, \
+         open(src_test_bin_path, "wb") as src_test_bin, \
+         open(tgt_test_bin_path, "wb") as tgt_test_bin:
+
 
         tokenizing_input = True
         
@@ -45,13 +53,17 @@ def txt_to_bin(tokenizer: Tokenizer,
             assert (src_line and tgt_line)
 
             src_ids = tokenizer.encode(
-                src_line, add_SOS=False, add_EOS=False, PAD=input_len, PAD_front=True, PAD_back=False).tolist()
+                src_line, add_SOS=False, add_EOS=False, pad=True, pad_len =input_len).tolist()
 
             tgt_ids = tokenizer.encode(
-                tgt_line, add_SOS=True, add_EOS=True, PAD=output_len, PAD_front=False, PAD_back=True).tolist()
+                tgt_line, add_SOS=True, add_EOS=True, pad=True, pad_len=output_len).tolist()
 
-            src_bin.write(torch.tensor(src_ids, dtype=dtype).numpy().tobytes())
-            tgt_bin.write(torch.tensor(tgt_ids, dtype=dtype).numpy().tobytes())
+            if processed_lines < train_lines:
+                src_train_bin.write(torch.tensor(src_ids, dtype=dtype).numpy().tobytes())
+                tgt_train_bin.write(torch.tensor(tgt_ids, dtype=dtype).numpy().tobytes())
+            else:
+                src_test_bin.write(torch.tensor(src_ids, dtype=dtype).numpy().tobytes())
+                tgt_test_bin.write(torch.tensor(tgt_ids, dtype=dtype).numpy().tobytes())
 
 
             processed_lines += 1

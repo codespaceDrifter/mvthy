@@ -13,10 +13,8 @@ class Tokenizer:
         self.UNK_ID = self.token_to_id.get('UNK', None)
         self.PAD_ID = self.token_to_id.get('PAD', None)
 
-    def encode(self, text, add_SOS=False, add_EOS=False, PAD=0, PAD_front = False, PAD_back = True):
+    def encode(self, text, add_SOS=False, add_EOS=False,pad=True, pad_len = 0):
 
-
-        assert not (PAD_front and PAD_back), "cannot pad both directions"
         # Tokenize and convert to IDs
         tokens = self.trie.tokenize(text)
         ids = [self.token_to_id.get(tok, self.UNK_ID) for tok in tokens]
@@ -29,18 +27,13 @@ class Tokenizer:
         if add_EOS:
             ids = ids + [self.EOS_ID]
         # Handle padding
-        if PAD > 0:
+        if pad:
             # Ensure PAD is not less than the current length
-            assert PAD >= len(ids), f"PAD size ({PAD}) is less than sequence length ({len(ids)})"
+            assert pad_len >= len(ids), f"PAD size ({pad_len}) is less than sequence length ({len(ids)})"
             # Calculate padding amount
-            pad_amount = PAD - len(ids)
-            # Pad in front if add_SOS is True, otherwise pad after
-            if PAD_front:
-                # Pad in FRONT
-                ids = [self.PAD_ID] * pad_amount + ids
-            if PAD_back:
-                # Pad AFTER
-                ids = ids + [self.PAD_ID] * pad_amount
+            pad_amount = pad_len - len(ids)
+            # Pad AFTER
+            ids = ids + [self.PAD_ID] * pad_amount
         return torch.tensor(ids, dtype=torch.int32)
 
     def decode(self, ids):
