@@ -13,13 +13,13 @@ sys.path.append(project_root)
 # ADD ALL TXT CREATION SCRIPTS HERE TOO. THIS SHOULD CREATE THE ENTIRE DATASET. FROM SCRATCH. GITHUB DOESNT TRACK DATSETS ANYMORE. 
 from utils.temp_scripts.int_add import create_int_addition_txt
 
-#create_int_addition_txt()
+create_int_addition_txt()
 
 
 from tokenization.tokenizer import Tokenizer
 from utils.txt_to_bin import txt_to_bin
 
-dataset_root = os.path.join (project_root, "curriculum", "int_addition")
+dataset_root = os.path.join (project_root, "curriculum", "0")
 
 tokenizer = Tokenizer(os.path.join(project_root, "tokenization/assets/token_to_id.json"))
 

@@ -12,8 +12,10 @@ from train.trainer import train_model
 from utils.batched_dataset import BatchedDataset, squeeze_batch_collate
 from torch.utils.data import DataLoader
 
+CURRICULUM = "0"
 
-dataset_root = os.path.join (project_root, "curriculum/int_addition")
+
+dataset_root = os.path.join (project_root, "curriculum", CURRICULUM)
 
 train_dataset = BatchedDataset (
     src_path = os.path.join(dataset_root, "bin", "src_train.bin"),
@@ -86,7 +88,7 @@ train_model(
     train_loader = train_loader,
     test_loader = test_loader,
     model = model,
-    optimizer=torch.optim.Adam(model.parameters(), lr=0.0001),
+    optimizer=torch.optim.Adam(model.parameters(), lr=1e-5),
     save_folder_path=os.path.join(project_root, "checkpoints"),
     perma_save_folder_path=os.path.join(project_root, "checkpoints/perma"),
     loss_fn=nn.CrossEntropyLoss(ignore_index=0),
