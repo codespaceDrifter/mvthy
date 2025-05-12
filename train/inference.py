@@ -9,10 +9,7 @@ import torch
 from model.transformer.classic_transformer import ClassicTransformer
 import torch.nn as nn
 import torch
-from utils.bin_to_tensors import bin_to_tensors
 from tokenization.tokenizer import Tokenizer
-from train.trainer import train_model
-from utils.tensor_dataset import TensorDataset
 from train.saves import load_latest_checkpoint
 
 
@@ -28,8 +25,8 @@ def inference(model, tokenizer, max_length=200):
         if user_input.lower() == 'exit':
             break
         
-        x = tokenizer.encode(user_input, add_SOS=False, add_EOS=False).unsqueeze(0).cuda()
-        y = tokenizer.encode("", add_SOS=True, add_EOS=False).unsqueeze(0).cuda()
+        x = tokenizer.encode(user_input, add_SOS=False, add_EOS=False, pad=False).unsqueeze(0).cuda()
+        y = tokenizer.encode("", add_SOS=True, add_EOS=False, pad=False).unsqueeze(0).cuda()
         with torch.no_grad():
             while y.size(-1) < max_length:
                 # (batch, 1)
@@ -53,9 +50,9 @@ model = ClassicTransformer(
     num_heads = 16,
     num_encoders = 6,
     num_decoders = 6,
-    d_ff = 2048,
+    d_ff = 3072,
     loss_fn = nn.CrossEntropyLoss(ignore_index=0),
-    max_seq_len = 10000,
+    max_seq_len = 2000,
     pad_id = 0,
     sos_id = 1,
     eos_id = 2,

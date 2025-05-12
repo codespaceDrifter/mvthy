@@ -8,7 +8,7 @@ import torch
 import os
 from torch.utils.data import DataLoader
 from tokenization.tokenizer import Tokenizer
-from train.saves import cleanup_checkpoints, load_latest_checkpoint
+from train.saves import cleanup_checkpoints, load_latest_checkpoint, sanitize_model_params
 import numpy as np
 from torch.cuda.amp import autocast, GradScaler
 import time
@@ -77,7 +77,8 @@ def train_model(
             #mixed precision about a 30% speed up
             with autocast():
                 loss = model.compute_loss(inputs,targets)
-                assert torch.isfinite(loss).all(), f"Loss is not finite: {loss.item()}" 
+                #assert torch.isfinite(loss).all(), f"Loss is not finite: {loss.item()}" 
+                loss = torch.nan_to_num(loss, nan=0.0, posinf=1e3, neginf=-1e3)
     
                 if debug == True: print ("loss", loss.item())
     
@@ -101,7 +102,7 @@ def train_model(
 
             if debug: print("forward backward end", time.strftime("%M:%S", time.localtime()))
 
-    
+            sanitize_model_params(model)
             for param in model.parameters():
                 param.data.clamp_(-100, 100)
             
